@@ -1,0 +1,494 @@
+Bottom Navigation: https://stackoverflow.com/questions/41895883/how-to-set-notification-count-for-android-bottomnavigationview
+https://tutorialwing.com/android-bottom-navigation-view-tutorial-with-example/
+
+Navigation Drawer: https://android.jlelse.eu/android-adding-badge-or-count-to-the-navigation-drawer-84c93af1f4d9
+
+call fragment in bottom navigation: https://stackoverflow.com/questions/43104485/how-to-change-fragment-with-the-bottom-navigation-activity
+
+rxjava: https://www.raywenderlich.com/170233/reactive-programming-rxandroid-kotlin-introduction
+
+RaspberryPiBoard: https://developer.android.com/things/hardware/raspberrypi.html
+
+
+Alex amazon: https://dzone.com/articles/real-time-infrastructure-monitoring-with-amazon-ec
+
+https://github.com/mikepenz/MaterialDrawer
+
+
+ola hacker: https://github.com/saisoftdev/Android-MusicPlayer-MVP
+
+expandView: https://github.com/florent37/ExpansionPanel
+
+bootstrap demo: https://mdbootstrap.com/bootstrap-tutorial/
+
+
+
+
+
+ion framework
+compile 'com.koushikdutta.ion:ion:2.1.4'
+package callbacks
+public interface NetworkCallback {
+    void onNetworkSuccess(JsonObject result, int status, int reqeustCode);
+    void onNetworkTimeout(String message);
+}
+
+package network
+package com.network;
+
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.text.TextUtils;
+
+import com.app_constants.Constants;
+import com.callbacks.NetworkCallback;
+import com.google.gson.JsonObject;
+import com.koushikdutta.async.future.FutureCallback;
+import com.koushikdutta.ion.Ion;
+import com.koushikdutta.ion.Response;
+import com.koushikdutta.ion.builder.Builders;
+
+import java.io.File;
+
+/*
+*
+ * Created by fluper on 5/9/17.
+ */
+
+
+public class Network {
+    private static int status;
+    private static String url;
+    private static NetworkCallback callback;
+
+    public static boolean isConnected(Context ctx) {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
+        return ni != null && ni.isAvailable() && ni.isConnected();
+    }
+
+    public Network(NetworkCallback callback, String url) {
+        Network.url = url;
+        Network.callback = callback;
+    }
+
+    private static Builders.Any.B getIon(Context context, String url, int timeout) {
+        return Ion.with(context).load(url).setTimeout(timeout);
+    }
+
+    public static void getNetworkResponseWithOutAuth(Context context, JsonObject jsonObject, int timeout, final String url, final NetworkCallback callback, final int requestCode) {
+        Builders.Any.B ion = getIon(context, url, timeout);
+        ion.setJsonObjectBody(jsonObject)
+                .asJsonObject().withResponse()
+                .setCallback(new FutureCallback<Response<JsonObject>>() {
+                    @Override
+                    public void onCompleted(Exception e, Response<JsonObject> result) {
+                        if (e != null) {
+                            callback.onNetworkTimeout(Constants.TIMEOUT);
+                            return;
+                        }
+                        status = result.getHeaders().code();
+                        JsonObject resultObject = result.getResult();
+                        callback.onNetworkSuccess(resultObject, status, requestCode);
+                    }
+                });
+    }
+
+    public static void getNetworkResponseWithAuth(Context context, String accessToken, JsonObject jsonObject, int timeout,
+                                                  final String url, final NetworkCallback callback, final int requestCode) {
+        Builders.Any.B ion = getIon(context, url, timeout);
+        ion.addHeader("Authorization", accessToken).
+                setJsonObjectBody(jsonObject)
+                .asJsonObject().withResponse()
+                .setCallback(new FutureCallback<Response<JsonObject>>() {
+                    @Override
+                    public void onCompleted(Exception e, Response<JsonObject> result) {
+                        if (e != null) {
+                            callback.onNetworkTimeout(Constants.TIMEOUT);
+                            return;
+                        }
+                        status = result.getHeaders().code();
+                        JsonObject resultObject = result.getResult();
+                        callback.onNetworkSuccess(resultObject, status, requestCode);
+                    }
+                });
+    }
+
+
+    public static void getNetworkResponseEditProfileWithAuth(Context context, final String accessToken,
+                                                             final String name,
+                                                             final String mobile,
+                                                             final String email,
+                                                             final String aboutUs,
+                                                             final String profilePhoto,
+                                                             final String facebookEdit,
+                                                             int timeout,
+                                                             final String url, final NetworkCallback callback, final int requestCode) {
+
+        if (!TextUtils.isEmpty(profilePhoto)) {
+            Builders.Any.B ion = getIon(context, url, timeout);
+            ion.addHeader("Authorization", accessToken)
+                    .setMultipartParameter("name", name)
+                    .setMultipartParameter("mobile", mobile)
+                    .setMultipartParameter("email", email)
+                    .setMultipartParameter("about", aboutUs)
+                    .setMultipartFile("profile_photo", new File(profilePhoto))
+                    .asJsonObject().withResponse()
+                    .setCallback(new FutureCallback<Response<JsonObject>>() {
+                        @Override
+                        public void onCompleted(Exception e, Response<JsonObject> result) {
+                            if (e != null) {
+                                callback.onNetworkTimeout(Constants.TIMEOUT);
+                                return;
+                            }
+                            status = result.getHeaders().code();
+                            JsonObject resultObject = result.getResult();
+                            callback.onNetworkSuccess(resultObject, status, requestCode);
+                        }
+                    });
+        } else {
+            Builders.Any.B ion = getIon(context, url, timeout);
+            ion.addHeader("Authorization", accessToken)
+                    .setBodyParameter("name", name)
+                    .setBodyParameter("mobile", mobile)
+                    .setBodyParameter("email", email)
+                    .setBodyParameter("about", aboutUs)
+                    .asJsonObject().withResponse()
+                    .setCallback(new FutureCallback<Response<JsonObject>>() {
+                        @Override
+                        public void onCompleted(Exception e, Response<JsonObject> result) {
+                            if (e != null) {
+                                callback.onNetworkTimeout(Constants.TIMEOUT);
+                                return;
+                            }
+                            status = result.getHeaders().code();
+                            JsonObject resultObject = result.getResult();
+                            callback.onNetworkSuccess(resultObject, status, requestCode);
+                        }
+                    });
+        }
+
+
+    }
+
+    public static void getNetworkResponseForm(Context context, String accessToken, JsonObject jsonObject, int timeout,
+                                              final String url, final NetworkCallback callback, final int requestCode) {
+        Builders.Any.B ion = getIon(context, url, timeout);
+        ion.addHeader("Content-Type", "application/json").
+                addHeader("Authorization", accessToken).
+                setJsonObjectBody(jsonObject)
+                .asJsonObject().withResponse()
+                .setCallback(new FutureCallback<Response<JsonObject>>() {
+                    @Override
+                    public void onCompleted(Exception e, Response<JsonObject> result) {
+                        if (e != null) {
+                            callback.onNetworkTimeout(Constants.TIMEOUT);
+                            return;
+                        }
+                        status = result.getHeaders().code();
+                        JsonObject resultObject = result.getResult();
+                        callback.onNetworkSuccess(resultObject, status, requestCode);
+
+                    }
+                });
+    }
+
+
+    public static void getNetworkResponseGetWithAuth(Context context, String header, int timeout, String url, final int requestCode, final NetworkCallback callback) {
+        Builders.Any.B ion = getIon(context, url, timeout);
+        ion.addHeader("accessToken", header)
+                .asJsonObject().withResponse()
+                .setCallback(new FutureCallback<Response<JsonObject>>() {
+                    @Override
+                    public void onCompleted(Exception e, Response<JsonObject> result) {
+                        if (e != null) {
+                            callback.onNetworkTimeout(Constants.TIMEOUT);
+                            return;
+                        }
+                        status = result.getHeaders().code();
+                        JsonObject resultObject = result.getResult();
+                        callback.onNetworkSuccess(resultObject, status, requestCode);
+
+                    }
+                });
+    }
+
+    public static void getNetworkResponseGetWithoutHeader(Context context, int timeout, final String url, final NetworkCallback callback, final int requestCode) {
+        Builders.Any.B ion = getIon(context, url, timeout);
+        ion.asJsonObject().withResponse()
+                .setCallback(new FutureCallback<Response<JsonObject>>() {
+                    @Override
+                    public void onCompleted(Exception e, Response<JsonObject> result) {
+                        if (e != null) {
+                            callback.onNetworkTimeout(Constants.TIMEOUT);
+                            return;
+                        }
+                        status = result.getHeaders().code();
+                        JsonObject resultObject = result.getResult();
+                        callback.onNetworkSuccess(resultObject, status, requestCode);
+
+                    }
+                });
+    }
+
+
+    public void getNetworkResponseForImage(Context context, int timeout) {
+        Builders.Any.B ion = getIon(context, url, timeout);
+        ion.asJsonObject().withResponse()
+                .setCallback(new FutureCallback<Response<JsonObject>>() {
+                    @Override
+                    public void onCompleted(Exception e, Response<JsonObject> result) {
+                        if (e != null) {
+                            callback.onNetworkTimeout(Constants.TIMEOUT);
+                            return;
+                        }
+                        status = result.getHeaders().code();
+                        JsonObject resultObject = result.getResult();
+                        callback.onNetworkSuccess(resultObject, status, 1);
+                    }
+
+
+                });
+    }
+
+
+}
+
+interface NetworkConstants
+
+package com.network;
+
+/**
+ * Created by fluper on 14/10/17.
+ */
+
+public interface NetworkConstants {
+    /***************************------Base url for rest apis------***************************/
+    String BASE_URL = "http://worklime.com/blindDrunk/api/";
+    String NEED_HELP_URL = "http://winefolly.com/wp-content/uploads/2016/09/wine-colors-excerpt.jpg";
+
+
+    /**********-----------Suffix for url--------------***************/
+    String SIGN_UP = BASE_URL + "signup";
+    String LOGIN_IN = BASE_URL + "login";
+    String OTP_ACTIVATION = BASE_URL + "otpActivation";
+    String RESEND_OTP = BASE_URL + "resendOTP";
+    String FORGOT_PASSWORD = BASE_URL + "forgotPassword";
+    String RESET_PASSWORD = BASE_URL + "resetPassword";
+    String GET_QUESTION = BASE_URL + "getQuestions";
+    String SAVE_ANSWER = BASE_URL + "saveAnswers";
+    String CONCLUSION_ANSWER = BASE_URL + "conclusionAnswers";
+    String TOP_WINE = BASE_URL + "topWines";
+    String TOP_TASTER = BASE_URL + "topTasters";
+    String MY_WINE = BASE_URL + "myWines";
+    String EDIT_PROFILE = BASE_URL + "editProfile";
+    String DELETE_WINES = BASE_URL + "deleteWines";
+    String SEE_SIMILAR = BASE_URL + "seeSimilar";
+    String TOP_WINE_SEE_SIMILAR = BASE_URL + "topWinesSimilar";
+    String LOGOUT = BASE_URL + "logout";
+    String GET_POINT = BASE_URL + "getPoints";
+    String COLOR_GRAPE = BASE_URL + "colorGrapes";
+
+
+    /**************-----------------request constants for each url--------------*********/
+    int REQUEST_TYPE_SING_UP = 1;
+    int REQUEST_TYPE_LOGIN = 2;
+    int REQUEST_TYPE_OTP_ACTIVATION = 3;
+    int REQUEST_TYPE_RESEND_OTP = 4;
+    int REQUEST_TYPE_FORGOT_PASSWORD = 5;
+    int REQUEST_TYPE_RESET_PASSWORD = 6;
+    int REQUEST_TYPE_GET_QUESTION = 7;
+    int REQUEST_TYPE_SAVE_ANSWER = 8;
+    int REQUEST_TYPE_CONCLUSION_ANSER = 9;
+    int REQUEST_TYPE_TOP_WINE = 10;
+    int REQUEST_TYPE_TOP_TASTER = 11;
+    int REQUEST_TYPE_MY_WINE = 12;
+    int REQUEST_TYPE_EDIT_PROFILE = 13;
+    int REQUEST_TYPE_DELETE_WINES = 14;
+    int REQUEST_TYPE_SEE_SIMILAR = 15;
+    int REQUEST_TYPE_TOP_WINE_SEE_SIMILAR = 16;
+    int REQUEST_TYPE_LOGOUT = 17;
+    int REQUEST_TYPE_GET_POINT = 18;
+    int REQUEST_TYPE_COLOR_GRAPE = 19;
+}
+
+CALL IN ACTIVITY
+Network.getNetworkResponseWithOutAuth(activity, object, 60 * 1000, NetworkConstants.SIGN_UP,
+        this, NetworkConstants.REQUEST_TYPE_SING_UP);
+
+@Override
+public void onNetworkSuccess(JsonObject result, int status, int reqeustCode) {
+    progress.dismiss();
+    if (NetworkConstants.REQUEST_TYPE_LOGIN == reqeustCode) {
+        try {
+            Log.d("login_result", result.toString());
+            LoginModel loginModel = Helper.getGsonInstance().fromJson(result, LoginModel.class);
+            if (loginModel == null) {
+                return;
+            }
+
+            switch (status) {
+
+                case 200:
+                    if (loginModel.getResult().getIs_activate().equalsIgnoreCase("1")) {
+                        sharedPreference.putBoolean(Constants.SESSION, true);
+                        activity.startActivity(new Intent(activity, HomeActivity.class));
+                        activity.finish();
+                    } else {
+                        Bundle bundle = new Bundle();
+                        if (TextUtils.isEmpty(loginModel.getResult().getEmail())) {
+                            bundle.putString(Constants.OTP_ACTIVIATION_TYPE, "1");
+                        } else {
+                            bundle.putString(Constants.OTP_ACTIVIATION_TYPE, "2");
+                        }
+                        bundle.putString(Constants.IS_FROM_FORGET, "0");
+
+                        bundle.putString(Constants.USER_EMAIL, et_email.getText().toString().trim());
+                        bundle.putString(Constants.MOBILE_NUMBER, et_email.getText().toString().trim());
+                        ((MainActivity) activity).replaceEnterOTPFragment(bundle);
+                        sharedPreference.putBoolean(Constants.IS_FROM_LOGIN, true);
+                        sharedPreference.putBoolean(Constants.IS_FROM_SIGNUP, false);
+                        sharedPreference.putBoolean(Constants.IS_FROM_FORGET, false);
+                    }
+                    sharedPreference.putString(Constants.ACCESS_TOKEN, loginModel.getResult().getAccess_token());
+                    sharedPreference.putString(Constants.MOBILE_NUMBER, loginModel.getResult().getMobile());
+                    sharedPreference.putString(Constants.USER_EMAIL, loginModel.getResult().getEmail());
+                    sharedPreference.putString(Constants.USER_NAME, loginModel.getResult().getName());
+                    sharedPreference.putString(Constants.COUNTRY_CODE, loginModel.getResult().getCountry_code());
+                    sharedPreference.putString(Constants.USER_ABOUTUS, loginModel.getResult().getAbout());
+                    sharedPreference.putString(Constants.PROFILE_URL, loginModel.getProfile_url());
+                    sharedPreference.putString(Constants.GRAPS_URL, loginModel.getGrape_url());
+                    sharedPreference.putString(Constants.USER_ABOUTUS, loginModel.getResult().getAbout());
+                    sharedPreference.putString(Constants.USER_ID, loginModel.getResult().getId());
+                    sharedPreference.putString(Constants.USER_PHOTO, loginModel.getResult().getProfile_photo());
+                    sharedPreference.putString(Constants.REFERAL_CODE, loginModel.getResult().getGenerate_referral());
+                    sharedPreference.putString(Constants.FB_EXIST, loginModel.getFb_exist());
+                    break;
+
+                case 401:
+                    logoutUser();
+                    Toast.makeText(activity, loginModel.getMessage(), Toast.LENGTH_SHORT).show();
+                    break;
+
+                case 400:
+                    Toast.makeText(activity, loginModel.getMessage(), Toast.LENGTH_SHORT).show();
+                    break;
+
+                case 403:
+                    Toast.makeText(activity, loginModel.getMessage(), Toast.LENGTH_SHORT).show();
+                    break;
+
+                case 500:
+                    Toast.makeText(activity, loginModel.getMessage(), Toast.LENGTH_SHORT).show();
+                    break;
+            }
+        } catch (Exception e) {
+            Log.d("exception", e.toString());
+        }
+    }
+
+    if (NetworkConstants.REQUEST_TYPE_SING_UP == reqeustCode) {
+        try {
+            Log.d("signup_result", result.toString());
+            SignUpModel signUpModel = Helper.getGsonInstance().fromJson(result, SignUpModel.class);
+            if (signUpModel == null) {
+                return;
+            }
+
+            switch (status) {
+
+                case 200:
+                    if (signUpModel.getFb_exist().equalsIgnoreCase("0")) {
+                        Intent intent = new Intent(activity, EditUserProfileActivity.class);
+                        intent.putExtra(Constants.IS_FROM_USER_PROFILE, false);
+                        startActivity(intent);
+                        activity.finishAffinity();
+                    } else {
+                        activity.startActivity(new Intent(activity, HomeActivity.class));
+                        activity.finishAffinity();
+                    }
+
+                    sharedPreference.putBoolean(Constants.SESSION, true);
+                    sharedPreference.putString(Constants.ACCESS_TOKEN, signUpModel.getResult().getAccess_token());
+                    sharedPreference.putString(Constants.USER_ID, signUpModel.getResult().getId());
+                    sharedPreference.putString(Constants.MOBILE_NUMBER, signUpModel.getResult().getMobile());
+                    sharedPreference.putString(Constants.USER_EMAIL, signUpModel.getResult().getEmail());
+                    sharedPreference.putString(Constants.COUNTRY_CODE, signUpModel.getResult().getCountry_code());
+                    sharedPreference.putString(Constants.USER_NAME, signUpModel.getResult().getName());
+                    sharedPreference.putString(Constants.USER_ABOUTUS, signUpModel.getResult().getAbout());
+                    sharedPreference.putString(Constants.PROFILE_URL, signUpModel.getProfile_url());
+                    sharedPreference.putString(Constants.GRAPS_URL, signUpModel.getGrape_url());
+                    sharedPreference.putString(Constants.USER_ABOUTUS, signUpModel.getResult().getAbout());
+                    sharedPreference.putString(Constants.USER_PHOTO, signUpModel.getResult().getProfile_photo());
+                    sharedPreference.putString(Constants.REFERAL_CODE, signUpModel.getResult().getGenerate_referral());
+                    sharedPreference.putString(Constants.FB_EXIST, signUpModel.getFb_exist());
+
+                    break;
+                case 401:
+                    logoutUser();
+                    Toast.makeText(activity, signUpModel.getMessage(), Toast.LENGTH_SHORT).show();
+                    break;
+
+                case 400:
+                    Toast.makeText(activity, signUpModel.getMessage(), Toast.LENGTH_SHORT).show();
+                    break;
+
+                case 403:
+                    Toast.makeText(activity, signUpModel.getMessage(), Toast.LENGTH_SHORT).show();
+                    break;
+
+                case 500:
+                    Toast.makeText(activity, signUpModel.getMessage(), Toast.LENGTH_SHORT).show();
+                    break;
+            }
+        } catch (Exception e) {
+            Log.d("exception", e.toString());
+        }
+    }
+}
+
+
+private void logoutUser() {
+    sharedPreference.clear();
+    activity.finish();
+    startActivity(new Intent(activity, MainActivity.class));
+}
+
+@Override
+public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    callbackManager.onActivityResult(requestCode, resultCode, data);
+}
+
+
+@Override
+public void onNetworkTimeout(String message) {
+    progress.dismiss();
+    Toast.makeText(activity, message, Toast.LENGTH_SHORT).show();
+}
+Apply GSON in android:-
+public static Gson gson;
+
+public static Gson getGsonInstance() {
+    if (gson == null) {
+        gson = new Gson();
+    }
+    return gson;
+}
+
+ConclusionModel conclusionModel = Helper.getGsonInstance().fromJson(result, ConclusionModel.class);
+
+/**
+ * ----------Internet Checking Methdo-------------
+ ***/
+
+public static boolean isConnected(Context ctx) {
+    ConnectivityManager connectivityManager
+            = (ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+    NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
+    return ni != null && ni.isAvailable() && ni.isConnected();
+}
+
+
